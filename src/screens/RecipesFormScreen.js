@@ -1,7 +1,17 @@
-import { View,Text,TextInput,TouchableOpacity,Image,StyleSheet,} from "react-native";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+} from "react-native";
 import React, { useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import {widthPercentageToDP as wp,heightPercentageToDP as hp,} from "react-native-responsive-screen";
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from "react-native-responsive-screen";
 
 export default function RecipesFormScreen({ route, navigation }) {
   const { recipeToEdit, recipeIndex, onrecipeEdited } = route.params || {};
@@ -12,7 +22,42 @@ export default function RecipesFormScreen({ route, navigation }) {
   );
 
   const saverecipe = async () => {
- 
+    const newRecipe = {
+      title,
+      image,
+      description,
+    };
+
+    const existingRecipes = JSON.parse(
+      (await AsyncStorage.getItem("customrecipes")) || "[]"
+    );
+
+    // Get or initialize ID
+    let lastId = parseInt(await AsyncStorage.getItem("lastCustomId")) || 0;
+
+    if (recipeToEdit) {
+      existingRecipes[recipeIndex] = {
+        ...newRecipe,
+        idFood: existingRecipes[recipeIndex].idFood, // Keep same ID
+        category: existingRecipes[recipeIndex].category, // Optional
+      };
+      if (onrecipeEdited) onrecipeEdited();
+    } else {
+      lastId++;
+      const recipeWithId = {
+        ...newRecipe,
+        idFood: `${lastId}`,
+        recipeCategory: "Custom",
+      };
+      existingRecipes.push(recipeWithId);
+      await AsyncStorage.setItem("lastCustomId", lastId.toString());
+    }
+
+    await AsyncStorage.setItem(
+      "customrecipes",
+      JSON.stringify(existingRecipes)
+    );
+    navigation.goBack();
   };
 
   return (
@@ -58,12 +103,12 @@ const styles = StyleSheet.create({
     marginTop: hp(4),
     borderWidth: 1,
     borderColor: "#ddd",
-    padding: wp(.5),
+    padding: wp(0.5),
     marginVertical: hp(1),
   },
   image: {
     width: 300,
-    height:200,
+    height: 200,
     margin: wp(2),
   },
   imagePlaceholder: {
@@ -78,7 +123,7 @@ const styles = StyleSheet.create({
   },
   saveButton: {
     backgroundColor: "#4F75FF",
-    padding: wp(.5),
+    padding: wp(0.5),
     alignItems: "center",
     borderRadius: 5,
     marginTop: hp(2),
